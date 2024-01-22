@@ -1,0 +1,81 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/AutoScripts1/AutoDig/main/script"))()
+VG.DisableConnection(Error)
+VG.DisableConnection(Idled)
+
+VG.Tween = function(Object1, Object2, Speed, Offset, Wait)
+    if Object1 and Object2 then
+        local Timing = VG.Mag(Object1, Object2) / Speed
+        local TweenInfo = TweenInfo.new(Timing, Enum.EasingStyle.Linear)
+        local TweenSystem = TweenService:Create(Object1, TweenInfo, {CFrame = CFrame.new(Object2.Position + Offset)})
+        TweenSystem:Play()
+        if Wait then
+            TweenSystem.Completed:Wait()
+        end
+    end
+end
+
+local GetBlock = function()
+    local Block = nil
+    local Max = math.huge
+    for i,v in next, Workspace.__THINGS.__INSTANCE_CONTAINER.Active.Digsite.Important.ActiveBlocks:GetChildren() do
+        if v:IsA("BasePart") then
+            local Mag = VG.Mag(Player.Character.HumanoidRootPart, v)
+            if Mag < Max then
+                Max = Mag
+                Block = v
+            end
+        end
+    end
+    return Block
+end
+
+local GetChest = function()
+    local Chest = nil
+    local Max = 50
+    for i,v in next, Workspace.__THINGS.__INSTANCE_CONTAINER.Active.Digsite.Important.ActiveChests:GetChildren() do
+        if v:IsA("Model") then
+            local Mag = VG.Mag(Player.Character.HumanoidRootPart, v:GetModelCFrame())
+            if Mag < Max then
+                Max = Mag
+                Chest = v
+            end
+        end
+    end
+    return Chest
+end
+
+Stepped:Connect(function()
+    if FartOnMeDaddy then
+        VG.NoClip()
+    end
+end)
+spawn(function()
+    while wait(10) do -- game force kicks you out of the mini games every 20 minutes to pervent autofarms soo we do a little trolling
+        pcall(function()
+            User:SendMouseButtonEvent(0,0, 0, true, game, 0)
+            User:SendMouseButtonEvent(0,0, 1, true, game, 0)
+            wait(1)
+            User:SendMouseButtonEvent(0,0, 0, false, game, 0)
+            User:SendMouseButtonEvent(0,0, 1, false, game, 0)
+            if Player.Character.HumanoidRootPart.Position.Y <= -950 then
+                VG.FireConnection(Player.PlayerGui._INSTANCES.Digsite.Return.Activated)
+            end
+        end)
+    end
+end)
+spawn(function()
+    while FartOnMeDaddy and wait() do
+        pcall(function()
+            if GetChest() ~= nil then
+                VG.Tween(Player.Character.HumanoidRootPart, GetChest():FindFirstChildWhichIsA("BasePart"), 50, Vector3.new(0,0,0, true))
+                ReplicatedStorage:WaitForChild("Network"):WaitForChild("Instancing_FireCustomFromClient"):FireServer("Digsite","DigChest", GetChest():GetAttribute('Coord'))
+                wait(3)
+            elseif GetChest() == nil and GetBlock() and wait(.5) then
+                VG.Tween(Player.Character.HumanoidRootPart, GetBlock(), 250, Vector3.new(0,1,0, true))
+                for i=1, 6 do wait()
+                    ReplicatedStorage:WaitForChild("Network"):WaitForChild("Instancing_FireCustomFromClient"):FireServer("Digsite", "DigBlock", GetBlock():GetAttribute('Coord'))
+                end
+            end
+        end)
+    end
+end)
